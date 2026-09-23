@@ -1,0 +1,8 @@
+*.log
+*.msi
+*.exe
+*.zip
+node_modules/
+.env
+.env.*
+evidence/

@@ -1,0 +1,33 @@
+name: Validate installer syntax
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        shell: [powershell, pwsh]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse installer without running it
+        shell: ${{ matrix.shell }}
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $env:GITHUB_WORKSPACE 'Install-AgentLab.ps1'),
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+          if ($ast.ParamBlock.Parameters.Name.VariablePath.UserPath -notcontains 'SkipCopilotApp') {
+            throw 'Documented CLI-only parameter is missing.'
+          }
+          Write-Output 'Installer syntax valid. Installer was not executed.'
